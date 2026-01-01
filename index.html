@@ -8,9 +8,6 @@
   <style>
     body{background:#0f1115;color:#e5e7eb;font-family:Vazirmatn,Segoe UI,sans-serif;margin:0}
     .container{max-width:1100px;margin:0 auto;padding:16px}
-    .header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:16px}
-    .title{font-size:1.2rem;font-weight:700}
-    .status{color:#9aa3af;font-size:.9rem;margin-right:10px}
     .filters{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
     @media(max-width:800px){.filters{grid-template-columns:1fr}}
     .field{background:#141821;border:1px solid #1f2430;border-radius:12px;padding:10px;position:relative}
@@ -19,9 +16,7 @@
     .autocomplete{position:absolute;top:100%;right:10px;left:10px;z-index:10;background:#0b0d12;border:1px solid #1f2430;border-radius:10px;margin-top:6px;max-height:220px;overflow:auto;display:none}
     .autocomplete-item{padding:8px 10px;cursor:pointer;border-bottom:1px solid #1f2430}
     .autocomplete-item:hover{background:#11151d}
-    .summary{margin:12px 0}
     .pill{background:#0b0d12;border:1px solid #1f2430;border-radius:999px;padding:8px 12px;color:#cbd5e1}
-    .btn{background:#0b0d12;border:1px solid #1f2430;color:#e5e7eb;padding:10px 12px;border-radius:10px;cursor:pointer}
     .grid{background:#141821;border:1px solid #1f2430;border-radius:12px;overflow:hidden}
     .grid-header,.grid-row{display:grid;grid-template-columns:1.2fr .8fr .8fr;border-bottom:1px solid #1f2430}
     .grid-header{background:#0b0d12;font-weight:700}
@@ -32,32 +27,27 @@
 </head>
 <body>
 <div class="container">
-  <div class="header">
-    <div class="title">لیست ویزیت پزشکان</div>
-    <span id="status" class="status"></span>
-  </div>
+  <h2>لیست ویزیت پزشکان</h2>
+  <span id="status"></span>
 
   <div class="filters">
     <div class="field">
-      <label for="doctorInput">نام پزشک</label>
+      <label>نام پزشک</label>
       <input id="doctorInput" type="text" placeholder="جست‌وجو..." autocomplete="off" />
       <div id="doctorAutocomplete" class="autocomplete"></div>
     </div>
     <div class="field">
-      <label for="dateInput">تاریخ ویزیت</label>
+      <label>تاریخ ویزیت</label>
       <input id="dateInput" type="text" placeholder="YYYY/MM[/DD]" autocomplete="off" />
     </div>
     <div class="field">
-      <label for="productInput">نام محصول</label>
+      <label>نام محصول</label>
       <input id="productInput" type="text" placeholder="جست‌وجو..." autocomplete="off" />
       <div id="productAutocomplete" class="autocomplete"></div>
     </div>
   </div>
 
-  <div class="summary">
-    <div class="pill">نتیجه: <span id="count">0</span> رکورد</div>
-    <button class="btn" id="clearFilters">پاک‌سازی فیلترها</button>
-  </div>
+  <div class="pill">نتیجه: <span id="count">0</span> رکورد</div>
 
   <div class="grid">
     <div class="grid-header">
@@ -75,21 +65,11 @@
 let rows=[],filtered=[];
 let doctorSet=new Set(),productSet=new Set();
 
-const status=document.getElementById('status');
-const doctorInput=document.getElementById('doctorInput');
-const doctorAutocomplete=document.getElementById('doctorAutocomplete');
-const dateInput=document.getElementById('dateInput');
-const productInput=document.getElementById('productInput');
-const productAutocomplete=document.getElementById('productAutocomplete');
-const gridBody=document.getElementById('gridBody');
-const countEl=document.getElementById('count');
-const clearFilters=document.getElementById('clearFilters');
-
 function escapeHTML(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
-
 function renderGrid(list){
+  const gridBody=document.getElementById('gridBody');
   gridBody.innerHTML='';
-  if(!list.length){gridBody.innerHTML='<div class="grid-empty">رکوردی یافت نشد.</div>';countEl.textContent='0';return;}
+  if(!list.length){gridBody.innerHTML='<div class="grid-empty">رکوردی یافت نشد.</div>';document.getElementById('count').textContent='0';return;}
   const frag=document.createDocumentFragment();
   list.forEach(item=>{
     const rowEl=document.createElement('div');
@@ -100,9 +80,8 @@ function renderGrid(list){
     frag.appendChild(rowEl);
   });
   gridBody.appendChild(frag);
-  countEl.textContent=list.length;
+  document.getElementById('count').textContent=list.length;
 }
-
 function updateSuggestions(inputEl,boxEl,set,query){
   if(!query){boxEl.style.display='none';return;}
   const suggestions=Array.from(set).filter(v=>v.includes(query)).slice(0,20);
@@ -110,24 +89,10 @@ function updateSuggestions(inputEl,boxEl,set,query){
   boxEl.innerHTML=suggestions.map(s=>`<div class="autocomplete-item">${escapeHTML(s)}</div>`).join('');
   boxEl.style.display='block';
 }
-
-doctorAutocomplete.addEventListener('click',e=>{
-  const el=e.target.closest('.autocomplete-item');if(!el)return;
-  doctorInput.value=el.textContent.trim();doctorAutocomplete.style.display='none';applyFilters();
-});
-productAutocomplete.addEventListener('click',e=>{
-  const el=e.target.closest('.autocomplete-item');if(!el)return;
-  productInput.value=el.textContent.trim();productAutocomplete.style.display='none';applyFilters();
-});
-document.addEventListener('click',e=>{
-  if(!doctorAutocomplete.contains(e.target)&&e.target!==doctorInput)doctorAutocomplete.style.display='none';
-  if(!productAutocomplete.contains(e.target)&&e.target!==productInput)productAutocomplete.style.display='none';
-});
-
 function applyFilters(){
-  const qDoctor=doctorInput.value.trim();
-  const qDate=dateInput.value.trim();
-  const qProduct=productInput.value.trim();
+  const qDoctor=document.getElementById('doctorInput').value.trim();
+  const qDate=document.getElementById('dateInput').value.trim();
+  const qProduct=document.getElementById('productInput').value.trim();
   filtered=rows.filter(item=>{
     let ok=true;
     if(qDoctor)ok=ok&&item.doctor.includes(qDoctor);
@@ -136,24 +101,45 @@ function applyFilters(){
     return ok;
   });
   renderGrid(filtered);
-  updateSuggestions(doctorInput,doctorAutocomplete,doctorSet,qDoctor);
-  updateSuggestions(productInput,productAutocomplete,productSet,qProduct);
+  updateSuggestions(document.getElementById('doctorInput'),document.getElementById('doctorAutocomplete'),doctorSet,qDoctor);
+  updateSuggestions(document.getElementById('productInput'),document.getElementById('productAutocomplete'),productSet,qProduct);
 }
-
-clearFilters.addEventListener('click',()=>{
-  doctorInput.value='';dateInput.value='';productInput.value='';
-  doctorAutocomplete.style.display='none';productAutocomplete.style.display='none';
-  renderGrid(rows);countEl.textContent=rows.length;
-});
-
 function rebuildSets(){
   doctorSet=new Set(rows.map(r=>r.doctor));
   productSet=new Set(rows.map(r=>r.product));
 }
-
 async function loadExcel(){
   try{
-    status.textContent='در حال خواندن data.xlsx ...';
+    document.getElementById('status').textContent='در حال خواندن data.xlsx ...';
+    // اگر روی گیت‌هاب هست، لینک Raw رو جایگزین کن
     const resp=await fetch('data.xlsx');
     const buf=await resp.arrayBuffer();
-    const wb
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+    const records=[];
+    for(const row of arr){
+      if(!row[0]||row[0]==="نام پزشک") continue;
+      const doctor=String(row[0]).trim();
+      for(let i=1;i<row.length;i+=2){
+        const date=row[i]?String(row[i]).trim():'';
+        const product=row[i+1]?String(row[i+1]).trim():'';
+        if(date||product){records.push({doctor,date,product});}
+      }
+    }
+    rows=records;rebuildSets();renderGrid(rows);
+    document.getElementById('status').textContent=`${rows.length} رکورد بارگذاری شد.`;
+  }catch(e){
+    console.error(e);
+    document.getElementById('status').textContent='خطا در خواندن فایل.';
+  }
+}
+loadExcel();
+
+// جست‌وجوی زنده
+document.getElementById('doctorInput').addEventListener('input',()=>applyFilters());
+document.getElementById('dateInput').addEventListener('input',()=>applyFilters());
+document.getElementById('productInput').addEventListener('input',()=>applyFilters());
+</script>
+</body>
+</html>
